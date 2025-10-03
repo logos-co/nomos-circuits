@@ -1,0 +1,128 @@
+name: "Compile and Bundle Circuit"
+description: "Compiles and bundles the witness generator of a Circom Circuit"
+branding:
+  icon: "package"
+  color: "blue"
+
+inputs:
+  circuit-name-display:
+    description: "The name of the Circom circuit to compile."
+    required: true
+  circuit-name-binary:
+    description: "The final name of the compiled binary. The name should be extensionless."
+    required: true
+  circuit-path:
+    description: "The path to the Circom circuit file relative to the repository root."
+    required: true
+  resources-path:
+    description: "The path to the CI resources directory relative to the repository root."
+    required: false
+    default: ".github/resources"
+  version:
+    description: "The version of the bundle. E.g.: v1.0.0."
+    required: true
+  os:
+    description: "The target operating system for the bundle (linux, windows, macos)."
+    required: true
+  arch:
+    description: "The target architecture for the bundle (x86_64, aarch64)."
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Parse Circuit Path
+      id: parse-circuit-path
+      shell: bash
+      env:
+        CIRCUIT_PATH: ${{ inputs.circuit-path }}
+        BUNDLE_TRIPLET: ${{ inputs.version }}-${{ inputs.os }}-${{ inputs.arch }}
+        CIRCUIT_NAME_BINARY: ${{ inputs.circuit-name-binary }}
+        RESOURCES_PATH: ${{ inputs.resources-path }}
+        OS: ${{ inputs.os }}
+      run: |
+        CIRCUIT_DIRECTORY="$(dirname ${CIRCUIT_PATH})"
+        CIRCUIT_FILENAME="$(basename ${CIRCUIT_PATH})"
+        CIRCUIT_FILESTEM="${CIRCUIT_FILENAME%.circom}"
+        CIRCUIT_CPP_DIRNAME="${CIRCUIT_FILESTEM}_cpp"
+        
+        platform_binary_name="${CIRCUIT_NAME_BINARY}"
+        if [ "${OS}" = "windows" ]; then
+          platform_binary_name="${platform_binary_name}.exe"
+        fi
+        
+        {
+          echo "CIRCUIT_DIRECTORY=${CIRCUIT_DIRECTORY}"
+          echo "CIRCUIT_FILENAME=${CIRCUIT_FILENAME}"
+          echo "CIRCUIT_FILESTEM=${CIRCUIT_FILESTEM}"
+          echo "CIRCUIT_CPP_DIRNAME=${CIRCUIT_CPP_DIRNAME}"
+          echo "CIRCUIT_CPP_PATH=${CIRCUIT_DIRECTORY}/${CIRCUIT_CPP_DIRNAME}"
+          echo "WITNESS_GENERATOR_RESOURCES_PATH=${RESOURCES_PATH}/witness-generator"
+          echo "BUNDLE_TRIPLET=${BUNDLE_TRIPLET}"
+          echo "PLATFORM_BINARY_NAME=${platform_binary_name}"
+        } >> "${GITHUB_OUTPUT}"
+
+    - name: Generate ${{ inputs.circuit-name-display }}
+      shell: bash
+      working-directory: ${{ steps.parse-circuit-path.outputs.CIRCUIT_DIRECTORY }}
+      env:
+        CIRCUIT_FILENAME: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILENAME }}
+      run: circom --c --r1cs --no_asm --O2 "${CIRCUIT_FILENAME}"
+
+    # TODO: Instead of replace, make a fork that generates the appropriate Makefile
+    - name: Replace ${{ inputs.circuit-name-display }}'s Makefile
+      shell: bash
+      env:
+        WITNESS_GENERATOR_RESOURCES_PATH: ${{ steps.parse-circuit-path.outputs.WITNESS_GENERATOR_RESOURCES_PATH }}
+        CIRCUIT_CPP_PATH: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
+      run: cp "${WITNESS_GENERATOR_RESOURCES_PATH}/Makefile" "${CIRCUIT_CPP_PATH}/Makefile"
+
+    # TODO: Instead of insertion, make a fork that includes the appropriate patch (or the actual fix)
+    - name: Patch MacOS GMP
+      shell: bash
+      if: ${{ inputs.os == 'macos' }}
+      env:
+        WITNESS_GENERATOR_RESOURCES_PATH: ${{ steps.parse-circuit-path.outputs.WITNESS_GENERATOR_RESOURCES_PATH }}
+        CIRCUIT_CPP_PATH: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
+        OS: ${{ inputs.os }}
+      run: cp "${WITNESS_GENERATOR_RESOURCES_PATH}/${{ env.OS }}.gmp_patch.hpp" "${CIRCUIT_CPP_PATH}/gmp_patch.hpp"
+
+    - name: Compile ${{ inputs.circuit-name-display }}
+      if: ${{ inputs.os != 'windows' }}
+      shell: bash
+      working-directory: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
+      env:
+        CIRCUIT_FILESTEM: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
+        OS: ${{ inputs.os }}
+      run: make PROJECT="${CIRCUIT_FILESTEM}" "${OS}"
+
+    - name: Compile ${{ inputs.circuit-name-display }}
+      if: ${{ inputs.os == 'windows' }}
+      shell: msys2 {0}
+      working-directory: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
+      env:
+        CIRCUIT_FILESTEM: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
+        OS: ${{ inputs.os }}
+      run: make PROJECT="${CIRCUIT_FILESTEM}" "${OS}"
+
+    - name: Bundle ${{ inputs.circuit-name-display }}
+      shell: bash
+      env:
+        CIRCUIT_NAME: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
+        PLATFORM_BINARY_NAME: ${{ steps.parse-circuit-path.outputs.PLATFORM_BINARY_NAME }}
+        BUNDLE_NAME: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}
+        WITNESS_GENERATOR_DIR: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
+      run: |
+        BUNDLE_DIR="${BUNDLE_NAME}/witness-generator"
+        mkdir -p "$BUNDLE_DIR"
+
+        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}"
+        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}.dat" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}.dat"
+
+        tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+    - name: Upload ${{ inputs.circuit-name-display }}
+      uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+      with:
+        name: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
+        path: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
