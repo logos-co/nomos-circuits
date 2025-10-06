@@ -1,10 +1,10 @@
 # Contributor's Guide
 
-## Triggering a New Release for Circom Circuits
+## Triggering a New Release for Nomos Circuits
 
 To trigger a release build:
 
-1. Create and push a tag in the format `circom-circuits_vX.Y.Z`.
+1. Create and push a tag in the format `vX.Y.Z`.
 2. This will automatically trigger the `.github/workflows/build_circuits.yml` workflow.
 3. Once the workflow finishes, the generated artifacts will be attached to a new release.
 
@@ -13,7 +13,7 @@ To trigger a release build:
 ### Example
 
 ```bash
-git tag circom_circuits-v1.2.3 -m "Release for Circom Circuits v1.2.3"
+git tag v1.2.3 -m "Release v1.2.3"
 git push --tags
 ```
 
