@@ -3,11 +3,12 @@ name: Build Circuits
 on:
   push:
     tags:
-      - "circom_circuits-v*.*.*"
+      - "v*.*.*"
+  pull_request:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to release. Must follow the format of 'circom_circuits-vX.Y.Z'."
+        description: "Tag to release. Must follow the format of 'vX.Y.Z'."
         required: true
 
 jobs:
@@ -23,13 +24,13 @@ jobs:
         env:
           # Use the tag name if it is available, otherwise use the input version.
           # If neither is available, default to the commit hash.
-          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || '' }}
+          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || 'v0.0.0' }}
         run: |
           if [ -z "$TAG" ]; then
             echo "Could not determine tag."
             exit 1
-          elif [[ ! "$TAG" =~ ^circom_circuits-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "TAG must follow the format of 'circom_circuits-vX.Y.Z'. Value: '$VERSION'."
+          elif [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "TAG must follow the format of 'vX.Y.Z'. Value: '$VERSION'."
             exit 2
           fi
 
@@ -71,7 +72,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: Setup Dependencies
-        working-directory: circom_circuits/rapidsnark
+        working-directory: rapidsnark
         run: sudo apt update -y
 
       - name: Install Dependencies [Prover]
@@ -81,10 +82,10 @@ jobs:
         run: sudo apt install nlohmann-json3-dev
 
       - name: Replace Prover Makefile # TODO: Make a fork generate the appropriate Linux Makefile
-        run: cp .github/resources/prover/Makefile circom_circuits/rapidsnark/Makefile
+        run: cp .github/resources/prover/Makefile rapidsnark/Makefile
 
       - name: Compile Prover and Verifier
-        working-directory: circom_circuits/rapidsnark
+        working-directory: rapidsnark
         run: |
           ./build_gmp.sh host
           make host_linux_x86_64_static
@@ -93,7 +94,7 @@ jobs:
         env:
           BINARY_NAME: prover
           BUNDLE_NAME: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package
+          RAPIDSNARK_DIR: rapidsnark/package
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -106,7 +107,7 @@ jobs:
         env:
           BINARY_NAME: verifier
           BUNDLE_NAME: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package
+          RAPIDSNARK_DIR: rapidsnark/package
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -132,7 +133,7 @@ jobs:
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
-          circuit-path: "circom_circuits/Mantle/pol.circom"
+          circuit-path: "mantle/pol.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -142,7 +143,7 @@ jobs:
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
-          circuit-path: "circom_circuits/Blend/poq.circom"
+          circuit-path: "blend/poq.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -152,7 +153,7 @@ jobs:
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
-          circuit-path: "circom_circuits/Mantle/signature.circom"
+          circuit-path: "mantle/signature.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -162,7 +163,7 @@ jobs:
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
-          circuit-path: "circom_circuits/Mantle/poc.circom"
+          circuit-path: "mantle/poc.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -228,11 +229,11 @@ jobs:
 
       - name: Replace Prover Makefile # TODO: Make a fork generate the appropriate Windows Makefile
         shell: msys2 {0}
-        run: cp .github/resources/prover/Makefile circom_circuits/rapidsnark/Makefile
+        run: cp .github/resources/prover/Makefile rapidsnark/Makefile
 
       - name: Replace Prover CMakeLists
         shell: msys2 {0}
-        run: cp .github/resources/prover/${{ env.OS }}.src-CMakeLists.txt circom_circuits/rapidsnark/src/CMakeLists.txt
+        run: cp .github/resources/prover/${{ env.OS }}.src-CMakeLists.txt rapidsnark/src/CMakeLists.txt
 
       - name: Patch Windows mman
         shell: msys2 {0}
@@ -244,11 +245,11 @@ jobs:
 
       - name: Replace build_gmp
         shell: msys2 {0}
-        run: cp .github/resources/prover/${{ env.OS }}.build_gmp.sh circom_circuits/rapidsnark/build_gmp.sh
+        run: cp .github/resources/prover/${{ env.OS }}.build_gmp.sh rapidsnark/build_gmp.sh
 
       - name: Compile Prover and Verifier
         shell: msys2 {0}
-        working-directory: circom_circuits/rapidsnark
+        working-directory: rapidsnark
         run: |
           ./build_gmp.sh host
           make host_windows_x86_64_static
@@ -258,7 +259,7 @@ jobs:
         env:
           BINARY_NAME: prover
           BUNDLE_NAME: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package
+          RAPIDSNARK_DIR: rapidsnark/package
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -272,7 +273,7 @@ jobs:
         env:
           BINARY_NAME: verifier
           BUNDLE_NAME: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package
+          RAPIDSNARK_DIR: rapidsnark/package
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -298,7 +299,7 @@ jobs:
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
-          circuit-path: "circom_circuits/Mantle/pol.circom"
+          circuit-path: "mantle/pol.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -308,7 +309,7 @@ jobs:
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
-          circuit-path: "circom_circuits/Blend/poq.circom"
+          circuit-path: "blend/poq.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -318,7 +319,7 @@ jobs:
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
-          circuit-path: "circom_circuits/Mantle/signature.circom"
+          circuit-path: "mantle/signature.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -328,7 +329,7 @@ jobs:
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
-          circuit-path: "circom_circuits/Mantle/poc.circom"
+          circuit-path: "mantle/poc.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -373,7 +374,7 @@ jobs:
         run: brew install nasm m4
 
       - name: Compile Prover and Verifier
-        working-directory: circom_circuits/rapidsnark
+        working-directory: rapidsnark
         run: |
           ./build_gmp.sh macos_arm64
           make macos_arm64
@@ -382,7 +383,7 @@ jobs:
         env:
           BINARY_NAME: prover
           BUNDLE_NAME: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package_macos_arm64
+          RAPIDSNARK_DIR: rapidsnark/package_macos_arm64
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -395,7 +396,7 @@ jobs:
         env:
           BINARY_NAME: verifier
           BUNDLE_NAME: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          RAPIDSNARK_DIR: circom_circuits/rapidsnark/package_macos_arm64
+          RAPIDSNARK_DIR: rapidsnark/package_macos_arm64
         run: |
           BUNDLE_DIR="${BUNDLE_NAME}/${BINARY_NAME}"
           mkdir -p "$BUNDLE_DIR"
@@ -421,7 +422,7 @@ jobs:
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
-          circuit-path: "circom_circuits/Mantle/pol.circom"
+          circuit-path: "mantle/pol.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -431,7 +432,7 @@ jobs:
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
-          circuit-path: "circom_circuits/Blend/poq.circom"
+          circuit-path: "blend/poq.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -441,7 +442,7 @@ jobs:
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
-          circuit-path: "circom_circuits/Mantle/signature.circom"
+          circuit-path: "mantle/signature.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
@@ -451,7 +452,7 @@ jobs:
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
-          circuit-path: "circom_circuits/Mantle/poc.circom"
+          circuit-path: "mantle/poc.circom"
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
