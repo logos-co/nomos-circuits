@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       tag:
@@ -22,19 +25,25 @@ jobs:
         id: define-version
         env:
           # Use the tag name if it is available, otherwise use the input version.
-          # If neither is available, default to the commit hash.
-          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || 'v0.0.0' }}
+          # For PR testing, use a test version based on PR number and commit SHA.
+          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || format('v0.0.0-pr{0}-{1}', github.event.pull_request.number || '0', github.sha) }}
         run: |
           if [ -z "$TAG" ]; then
             echo "Could not determine tag."
             exit 1
-          elif [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "TAG must follow the format of 'vX.Y.Z'. Value: '$VERSION'."
-            exit 2
           fi
 
-          # Parse Version: Take only the vX.Y.Z part.
-          VERSION=$(echo $TAG | cut -d'-' -f2)
+          # For pull requests, allow test versions with format v0.0.0-pr*
+          if [[ "$TAG" =~ ^v0\.0\.0-pr ]]; then
+            echo "Using test version for PR: $TAG"
+            VERSION="$TAG"
+          elif [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "TAG must follow the format of 'vX.Y.Z'. Value: '$TAG'."
+            exit 2
+          else
+            # Parse Version: Take only the vX.Y.Z part.
+            VERSION=$(echo $TAG | cut -d'-' -f1)
+          fi
 
           # Export the tag and version.
           echo "tag=$TAG" >> $GITHUB_OUTPUT
@@ -571,6 +580,8 @@ jobs:
   publish-release:
     name: Create Release
     runs-on: ubuntu-latest
+    # Only create releases for tags, not for PRs
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     needs:
       - setup
       - generate-proving-keys
@@ -610,6 +621,8 @@ jobs:
   upload-artifacts:
     name: Upload Artifacts to Release
     runs-on: ubuntu-latest
+    # Only upload to release for tags, not for PRs
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     needs:
       - setup
       - publish-release
@@ -652,6 +665,8 @@ jobs:
   upload-zkey-artifacts:
     name: Upload Proving Key Artifacts to Release
     runs-on: ubuntu-latest
+    # Only upload to release for tags, not for PRs
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     needs:
       - setup
       - publish-release
