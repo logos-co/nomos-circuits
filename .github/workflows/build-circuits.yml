@@ -104,54 +104,66 @@ jobs:
       - name: Generate PoL Proving Key
         run: |
           cd mantle
-          circom -O2 --r1cs pol.circom
+          circom --r1cs --O2 pol.circom
           snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol-0.zkey
           head -c 32 /dev/random | snarkjs zkey contribute pol-0.zkey pol.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey pol.zkey pol_verification_key.json
 
       - name: Generate PoQ Proving Key
         run: |
           cd blend
-          circom -O2 --r1cs poq.circom
+          circom --r1cs --O2 poq.circom
           snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq-0.zkey
           head -c 32 /dev/random | snarkjs zkey contribute poq-0.zkey poq.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey poq.zkey poq_verification_key.json
 
       - name: Generate ZKSign Proving Key
         run: |
           cd mantle
-          circom -O2 --r1cs signature.circom
+          circom --r1cs --O2 signature.circom
           snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign-0.zkey
           head -c 32 /dev/random | snarkjs zkey contribute zksign-0.zkey zksign.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey zksign.zkey zksign_verification_key.json
 
       - name: Generate PoC Proving Key
         run: |
           cd mantle
-          circom -O2 --r1cs poc.circom
+          circom --r1cs --O2 poc.circom
           snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc-0.zkey
           head -c 32 /dev/random | snarkjs zkey contribute poc-0.zkey poc.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey poc.zkey poc_verification_key.json
 
       - name: Upload PoL Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
           name: pol-proving-key
-          path: mantle/pol.zkey
+          path: |
+            mantle/pol.zkey
+            mantle/pol_verification_key.json
 
       - name: Upload PoQ Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
           name: poq-proving-key
-          path: blend/poq.zkey
+          path: |
+            blend/poq.zkey
+            blend/poq_verification_key.json
 
       - name: Upload ZKSign Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
           name: zksign-proving-key
-          path: mantle/zksign.zkey
+          path: |
+            mantle/zksign.zkey
+            mantle/zksign_verification_key.json
 
       - name: Upload PoC Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
           name: poc-proving-key
-          path: mantle/poc.zkey
+          path: |
+            mantle/poc.zkey
+            mantle/poc_verification_key.json
 
   build-linux:
     name: Build Linux Binaries (Native)
@@ -306,11 +318,15 @@ jobs:
           # Move witness generators from artifact download location to bundle
           mv witness-generators/* "${BUNDLE_NAME}/"
 
-          # Copy proving keys into each circuit directory
+          # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
           cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
           # Create tarball
           tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
@@ -514,11 +530,15 @@ jobs:
           # Move witness generators from artifact download location to bundle
           mv witness-generators/* "${BUNDLE_NAME}/"
 
-          # Copy proving keys into each circuit directory
+          # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
           cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
           # Create tarball
           tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
@@ -678,11 +698,15 @@ jobs:
           # Move witness generators from artifact download location to bundle
           mv witness-generators/* "${BUNDLE_NAME}/"
 
-          # Copy proving keys into each circuit directory
+          # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
           cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
           # Create tarball
           tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
