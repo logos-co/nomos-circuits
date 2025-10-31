@@ -106,7 +106,7 @@ jobs:
           cd mantle
           circom --r1cs --O2 pol.circom
           snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol-0.zkey
-          head -c 32 /dev/random | snarkjs zkey contribute pol-0.zkey pol.zkey --name="RELEASE" -v
+          head -c 32 /dev/urandom | snarkjs zkey contribute pol-0.zkey pol.zkey --name="RELEASE" -v
           snarkjs zkey export verificationkey pol.zkey pol_verification_key.json
 
       - name: Generate PoQ Proving Key
@@ -114,7 +114,7 @@ jobs:
           cd blend
           circom --r1cs --O2 poq.circom
           snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq-0.zkey
-          head -c 32 /dev/random | snarkjs zkey contribute poq-0.zkey poq.zkey --name="RELEASE" -v
+          head -c 32 /dev/urandom | snarkjs zkey contribute poq-0.zkey poq.zkey --name="RELEASE" -v
           snarkjs zkey export verificationkey poq.zkey poq_verification_key.json
 
       - name: Generate ZKSign Proving Key
@@ -122,7 +122,7 @@ jobs:
           cd mantle
           circom --r1cs --O2 signature.circom
           snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign-0.zkey
-          head -c 32 /dev/random | snarkjs zkey contribute zksign-0.zkey zksign.zkey --name="RELEASE" -v
+          head -c 32 /dev/urandom | snarkjs zkey contribute zksign-0.zkey zksign.zkey --name="RELEASE" -v
           snarkjs zkey export verificationkey zksign.zkey zksign_verification_key.json
 
       - name: Generate PoC Proving Key
@@ -130,7 +130,7 @@ jobs:
           cd mantle
           circom --r1cs --O2 poc.circom
           snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc-0.zkey
-          head -c 32 /dev/random | snarkjs zkey contribute poc-0.zkey poc.zkey --name="RELEASE" -v
+          head -c 32 /dev/urandom | snarkjs zkey contribute poc-0.zkey poc.zkey --name="RELEASE" -v
           snarkjs zkey export verificationkey poc.zkey poc_verification_key.json
 
       - name: Upload PoL Proving Key
