@@ -302,16 +302,20 @@ jobs:
           BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
         run: |
           # Create the bundle directory structure
-          mkdir -p "${BUNDLE_NAME}"
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
-          # Move witness generators from artifact download location to bundle
-          mv witness-generators/pol-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/poq-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/zksign-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/poc-artifact/* "${BUNDLE_NAME}/"
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq "${BUNDLE_NAME}/poq/witness_generator"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature "${BUNDLE_NAME}/zksign/witness_generator"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
@@ -704,16 +708,20 @@ jobs:
           BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
         run: |
           # Create the bundle directory structure
-          mkdir -p "${BUNDLE_NAME}"
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
-          # Move witness generators from artifact download location to bundle
-          mv witness-generators/pol-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/poq-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/zksign-artifact/* "${BUNDLE_NAME}/"
-          mv witness-generators/poc-artifact/* "${BUNDLE_NAME}/"
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq "${BUNDLE_NAME}/poq/witness_generator"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature "${BUNDLE_NAME}/zksign/witness_generator"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
