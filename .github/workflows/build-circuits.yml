@@ -104,26 +104,30 @@ jobs:
       - name: Generate PoL Proving Key
         run: |
           cd mantle
-          circom --r1cs --wasm pol.circom
-          snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol.zkey
+          circom -O2 --r1cs pol.circom
+          snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol-0.zkey
+          head -c 32 /dev/random | snarkjs zkey contribute pol-0.zkey pol.zkey --name="RELEASE" -v
 
       - name: Generate PoQ Proving Key
         run: |
           cd blend
-          circom --r1cs --wasm poq.circom
-          snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq.zkey
+          circom -O2 --r1cs poq.circom
+          snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq-0.zkey
+          head -c 32 /dev/random | snarkjs zkey contribute poq-0.zkey poq.zkey --name="RELEASE" -v
 
       - name: Generate ZKSign Proving Key
         run: |
           cd mantle
-          circom --r1cs --wasm signature.circom
-          snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign.zkey
+          circom -O2 --r1cs signature.circom
+          snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign-0.zkey
+          head -c 32 /dev/random | snarkjs zkey contribute zksign-0.zkey zksign.zkey --name="RELEASE" -v
 
       - name: Generate PoC Proving Key
         run: |
           cd mantle
-          circom --r1cs --wasm poc.circom
-          snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc.zkey
+          circom -O2 --r1cs poc.circom
+          snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc-0.zkey
+          head -c 32 /dev/random | snarkjs zkey contribute poc-0.zkey poc.zkey --name="RELEASE" -v
 
       - name: Upload PoL Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
