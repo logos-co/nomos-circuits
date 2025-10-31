@@ -170,6 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       OS: linux
@@ -342,6 +343,7 @@ jobs:
     runs-on: windows-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       OS: windows
@@ -554,6 +556,7 @@ jobs:
     runs-on: macos-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       ARCH: aarch64
