@@ -324,8 +324,8 @@ jobs:
           cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
           cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
-          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
-          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
           cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
@@ -537,8 +537,8 @@ jobs:
           cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
           cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
-          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
-          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
           cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
@@ -706,8 +706,8 @@ jobs:
           cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
           cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
           cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
-          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
-          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksig/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
           cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
           cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
 
