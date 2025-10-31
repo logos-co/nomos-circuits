@@ -124,4 +124,4 @@ runs:
       uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
       with:
         name: ${{ inputs.circuit-name-binary }}-${{ inputs.version }}-${{ inputs.os }}-${{ inputs.arch }}
-        path: nomos-circuits-${{ inputs.os }}-${{ inputs.arch }}-${{ inputs.version }}/${{ inputs.circuit-name-binary }}/
+        path: nomos-circuits-${{ inputs.os }}-${{ inputs.arch }}-${{ inputs.version }}/${{ inputs.circuit-name-binary }}
