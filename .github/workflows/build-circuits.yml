@@ -50,10 +50,30 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   generate-proving-keys:
-    name: Generate Proving Keys
+    name: Generate ${{ matrix.circuit.display }} Proving Key
     runs-on: ubuntu-latest
     needs:
       - setup
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit:
+          - name: pol
+            display: PoL
+            file: pol.circom
+            dir: mantle
+          - name: poq
+            display: PoQ
+            file: poq.circom
+            dir: blend
+          - name: zksign
+            display: ZKSign
+            file: signature.circom
+            dir: mantle
+          - name: poc
+            display: PoC
+            file: poc.circom
+            dir: mantle
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       PTAU_URL: "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_21.ptau"
@@ -101,69 +121,23 @@ jobs:
           curl -L -o "${{ env.PTAU_FILE }}" "${{ env.PTAU_URL }}"
           echo "Download complete."
 
-      - name: Generate PoL Proving Key
+      - name: Generate Proving Key
         run: |
-          cd mantle
-          circom --r1cs --O2 pol.circom
-          snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol-0.zkey
-          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute pol-0.zkey pol.zkey --name="RELEASE" -v
-          snarkjs zkey export verificationkey pol.zkey pol_verification_key.json
+          cd ${{ matrix.circuit.dir }}
+          circom --r1cs --O2 ${{ matrix.circuit.file }}
+          snarkjs groth16 setup ${CIRCUIT_NAME}.r1cs ../${{ env.PTAU_FILE }} ${{ matrix.circuit.name }}-0.zkey
+          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute ${{ matrix.circuit.name }}-0.zkey ${{ matrix.circuit.name }}.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey ${{ matrix.circuit.name }}.zkey ${{ matrix.circuit.name }}_verification_key.json
+        env:
+          CIRCUIT_NAME: ${{ matrix.circuit.file == 'signature.circom' && 'signature' || matrix.circuit.name }}
 
-      - name: Generate PoQ Proving Key
-        run: |
-          cd blend
-          circom --r1cs --O2 poq.circom
-          snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq-0.zkey
-          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute poq-0.zkey poq.zkey --name="RELEASE" -v
-          snarkjs zkey export verificationkey poq.zkey poq_verification_key.json
-
-      - name: Generate ZKSign Proving Key
-        run: |
-          cd mantle
-          circom --r1cs --O2 signature.circom
-          snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign-0.zkey
-          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute zksign-0.zkey zksign.zkey --name="RELEASE" -v
-          snarkjs zkey export verificationkey zksign.zkey zksign_verification_key.json
-
-      - name: Generate PoC Proving Key
-        run: |
-          cd mantle
-          circom --r1cs --O2 poc.circom
-          snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc-0.zkey
-          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute poc-0.zkey poc.zkey --name="RELEASE" -v
-          snarkjs zkey export verificationkey poc.zkey poc_verification_key.json
-
-      - name: Upload PoL Proving Key
+      - name: Upload Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
-          name: pol-proving-key
+          name: ${{ matrix.circuit.name }}-proving-key
           path: |
-            mantle/pol.zkey
-            mantle/pol_verification_key.json
-
-      - name: Upload PoQ Proving Key
-        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
-        with:
-          name: poq-proving-key
-          path: |
-            blend/poq.zkey
-            blend/poq_verification_key.json
-
-      - name: Upload ZKSign Proving Key
-        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
-        with:
-          name: zksign-proving-key
-          path: |
-            mantle/zksign.zkey
-            mantle/zksign_verification_key.json
-
-      - name: Upload PoC Proving Key
-        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
-        with:
-          name: poc-proving-key
-          path: |
-            mantle/poc.zkey
-            mantle/poc_verification_key.json
+            ${{ matrix.circuit.dir }}/${{ matrix.circuit.name }}.zkey
+            ${{ matrix.circuit.dir }}/${{ matrix.circuit.name }}_verification_key.json
 
   build-linux:
     name: Build Linux Binaries (Native)
@@ -297,25 +271,25 @@ jobs:
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/pol-artifact
 
       - name: Download PoQ Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/poq-artifact
 
       - name: Download ZKSign Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/zksign-artifact
 
       - name: Download PoC Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/poc-artifact
 
       - name: Download All Proving Key Artifacts
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
@@ -334,7 +308,10 @@ jobs:
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
           # Move witness generators from artifact download location to bundle
-          mv witness-generators/* "${BUNDLE_NAME}/"
+          mv witness-generators/pol-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/poq-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/zksign-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/poc-artifact/* "${BUNDLE_NAME}/"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
@@ -696,25 +673,25 @@ jobs:
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/pol-artifact
 
       - name: Download PoQ Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/poq-artifact
 
       - name: Download ZKSign Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/zksign-artifact
 
       - name: Download PoC Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
-          path: witness-generators/
+          path: witness-generators/poc-artifact
 
       - name: Download All Proving Key Artifacts
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
@@ -733,7 +710,10 @@ jobs:
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
           # Move witness generators from artifact download location to bundle
-          mv witness-generators/* "${BUNDLE_NAME}/"
+          mv witness-generators/pol-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/poq-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/zksign-artifact/* "${BUNDLE_NAME}/"
+          mv witness-generators/poc-artifact/* "${BUNDLE_NAME}/"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
