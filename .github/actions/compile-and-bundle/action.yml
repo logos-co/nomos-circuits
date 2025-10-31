@@ -110,19 +110,18 @@ runs:
       env:
         CIRCUIT_NAME: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
         PLATFORM_BINARY_NAME: ${{ steps.parse-circuit-path.outputs.PLATFORM_BINARY_NAME }}
-        BUNDLE_NAME: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}
+        BUNDLE_NAME: nomos-circuits-${{ inputs.os }}-${{ inputs.arch }}-${{ inputs.version }}
+        CIRCUIT_NAME_BINARY: ${{ inputs.circuit-name-binary }}
         WITNESS_GENERATOR_DIR: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
       run: |
-        BUNDLE_DIR="${BUNDLE_NAME}/witness-generator"
+        BUNDLE_DIR="${BUNDLE_NAME}/${CIRCUIT_NAME_BINARY}"
         mkdir -p "$BUNDLE_DIR"
 
-        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}"
-        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}.dat" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}.dat"
-
-        tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}" "$BUNDLE_DIR/witness_generator"
+        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}.dat" "$BUNDLE_DIR/witness_generator.dat"
 
     - name: Upload ${{ inputs.circuit-name-display }}
       uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
       with:
-        name: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
-        path: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
+        name: ${{ inputs.circuit-name-binary }}-${{ inputs.version }}-${{ inputs.os }}-${{ inputs.arch }}
+        path: nomos-circuits-${{ inputs.os }}-${{ inputs.arch }}-${{ inputs.version }}/${{ inputs.circuit-name-binary }}/

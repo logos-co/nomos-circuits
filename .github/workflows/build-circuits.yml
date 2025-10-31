@@ -106,60 +106,48 @@ jobs:
           cd mantle
           circom --r1cs --wasm pol.circom
           snarkjs groth16 setup pol.r1cs ../${{ env.PTAU_FILE }} pol.zkey
-          mkdir -p pol-${{ env.VERSION }}
-          mv pol.zkey pol-${{ env.VERSION }}/
-          tar -czf pol-${{ env.VERSION }}.zkey.tar.gz pol-${{ env.VERSION }}
 
       - name: Generate PoQ Proving Key
         run: |
           cd blend
           circom --r1cs --wasm poq.circom
           snarkjs groth16 setup poq.r1cs ../${{ env.PTAU_FILE }} poq.zkey
-          mkdir -p poq-${{ env.VERSION }}
-          mv poq.zkey poq-${{ env.VERSION }}/
-          tar -czf poq-${{ env.VERSION }}.zkey.tar.gz poq-${{ env.VERSION }}
 
       - name: Generate ZKSign Proving Key
         run: |
           cd mantle
           circom --r1cs --wasm signature.circom
           snarkjs groth16 setup signature.r1cs ../${{ env.PTAU_FILE }} zksign.zkey
-          mkdir -p zksign-${{ env.VERSION }}
-          mv zksign.zkey zksign-${{ env.VERSION }}/
-          tar -czf zksign-${{ env.VERSION }}.zkey.tar.gz zksign-${{ env.VERSION }}
 
       - name: Generate PoC Proving Key
         run: |
           cd mantle
           circom --r1cs --wasm poc.circom
           snarkjs groth16 setup poc.r1cs ../${{ env.PTAU_FILE }} poc.zkey
-          mkdir -p poc-${{ env.VERSION }}
-          mv poc.zkey poc-${{ env.VERSION }}/
-          tar -czf poc-${{ env.VERSION }}.zkey.tar.gz poc-${{ env.VERSION }}
 
       - name: Upload PoL Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
-          name: pol-${{ env.VERSION }}.zkey.tar.gz
-          path: mantle/pol-${{ env.VERSION }}.zkey.tar.gz
+          name: pol-proving-key
+          path: mantle/pol.zkey
 
       - name: Upload PoQ Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
-          name: poq-${{ env.VERSION }}.zkey.tar.gz
-          path: blend/poq-${{ env.VERSION }}.zkey.tar.gz
+          name: poq-proving-key
+          path: blend/poq.zkey
 
       - name: Upload ZKSign Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
-          name: zksign-${{ env.VERSION }}.zkey.tar.gz
-          path: mantle/zksign-${{ env.VERSION }}.zkey.tar.gz
+          name: zksign-proving-key
+          path: mantle/zksign.zkey
 
       - name: Upload PoC Proving Key
         uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
         with:
-          name: poc-${{ env.VERSION }}.zkey.tar.gz
-          path: mantle/poc-${{ env.VERSION }}.zkey.tar.gz
+          name: poc-proving-key
+          path: mantle/poc.zkey
 
   build-linux:
     name: Build Linux Binaries (Native)
@@ -287,6 +275,47 @@ jobs:
           version: ${{ env.VERSION }}
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
+
+      - name: Download All Witness Generator Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          path: witness-generators/
+          merge-multiple: true
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators from artifact download location to bundle
+          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+
+          # Copy proving keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
+          path: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
 
   build-windows:
     name: Build Windows Binaries (Native)
@@ -454,6 +483,48 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
+      - name: Download All Witness Generator Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          path: witness-generators/
+          merge-multiple: true
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        shell: msys2 {0}
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators from artifact download location to bundle
+          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+
+          # Copy proving keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
+          path: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
+
   build-macos:
     name: Build MacOS Binaries (Native)
     runs-on: macos-latest
@@ -577,6 +648,47 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
+      - name: Download All Witness Generator Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          path: witness-generators/
+          merge-multiple: true
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators from artifact download location to bundle
+          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+
+          # Copy proving keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksig/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
+          path: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}.tar.gz
+
   publish-release:
     name: Create Release
     runs-on: ubuntu-latest
@@ -619,7 +731,7 @@ jobs:
           prerelease: true
 
   upload-artifacts:
-    name: Upload Artifacts to Release
+    name: Upload Unified Bundles to Release
     runs-on: ubuntu-latest
     # Only upload to release for tags, not for PRs
     if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
@@ -636,58 +748,16 @@ jobs:
             arch: aarch64
           - os: windows
             arch: x86_64
-        artifact:
-          - prover
-          - verifier
-          - pol
-          - poq
-          - zksign
-          - poc
     env:
       UPLOAD_URL: ${{ needs.publish-release.outputs.upload_url }}
-      ARTIFACT_NAME: ${{ matrix.artifact }}-${{ needs.setup.outputs.version }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
+      ARTIFACT_NAME: nomos-circuits-${{ matrix.platform.os }}-${{ matrix.platform.arch }}-${{ needs.setup.outputs.version }}.tar.gz
     steps:
-      - name: Download Artifacts
+      - name: Download Unified Bundle
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: ${{ env.ARTIFACT_NAME }}
 
-      - name: Upload Artifacts to Release
-        uses: actions/upload-release-asset@ef2adfe8cb8ebfa540930c452c576b3819990faa
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ env.UPLOAD_URL }}
-          asset_path: ${{ env.ARTIFACT_NAME }}
-          asset_name: ${{ env.ARTIFACT_NAME }}
-          asset_content_type: application/octet-stream
-
-  upload-zkey-artifacts:
-    name: Upload Proving Key Artifacts to Release
-    runs-on: ubuntu-latest
-    # Only upload to release for tags, not for PRs
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-    needs:
-      - setup
-      - publish-release
-    strategy:
-      fail-fast: false
-      matrix:
-        circuit:
-          - pol
-          - poq
-          - zksign
-          - poc
-    env:
-      UPLOAD_URL: ${{ needs.publish-release.outputs.upload_url }}
-      ARTIFACT_NAME: ${{ matrix.circuit }}-${{ needs.setup.outputs.version }}.zkey.tar.gz
-    steps:
-      - name: Download Proving Key Artifact
-        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-
-      - name: Upload Proving Key to Release
+      - name: Upload Unified Bundle to Release
         uses: actions/upload-release-asset@ef2adfe8cb8ebfa540930c452c576b3819990faa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
