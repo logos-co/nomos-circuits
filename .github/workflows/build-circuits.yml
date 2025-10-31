@@ -293,12 +293,29 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Download All Witness Generator Artifacts
+      - name: Download PoL Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
-          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
           path: witness-generators/
-          merge-multiple: true
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
 
       - name: Download All Proving Key Artifacts
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
@@ -675,12 +692,29 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Download All Witness Generator Artifacts
+      - name: Download PoL Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
-          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
           path: witness-generators/
-          merge-multiple: true
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/
 
       - name: Download All Proving Key Artifacts
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
