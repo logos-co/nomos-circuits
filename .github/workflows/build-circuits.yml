@@ -304,7 +304,7 @@ jobs:
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
           # Move witness generators from artifact download location to bundle
-          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+          mv witness-generators/* "${BUNDLE_NAME}/"
 
           # Copy proving keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
@@ -512,7 +512,7 @@ jobs:
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
           # Move witness generators from artifact download location to bundle
-          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+          mv witness-generators/* "${BUNDLE_NAME}/"
 
           # Copy proving keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
@@ -676,7 +676,7 @@ jobs:
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
           # Move witness generators from artifact download location to bundle
-          mv witness-generators/nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}/* "${BUNDLE_NAME}/"
+          mv witness-generators/* "${BUNDLE_NAME}/"
 
           # Copy proving keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
