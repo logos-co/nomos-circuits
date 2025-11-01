@@ -10,6 +10,30 @@ To trigger a release build:
 
 > Currently, releases published this way are marked as **Draft** and **Pre-Release** to ensure that the changelog and pre-release steps are manually reviewed first.
 
+### Generated Artifacts
+
+Each release includes the following artifacts:
+
+#### Platform-Specific Binaries
+
+For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
+
+- **Prover binaries** (`prover-{version}-{os}-{arch}.tar.gz`)
+  Rapidsnark prover binaries for generating zk-SNARK proofs
+
+- **Verifier binaries** (`verifier-{version}-{os}-{arch}.tar.gz`)
+  Rapidsnark verifier binaries for verifying zk-SNARK proofs
+
+- **Witness generators** (`{circuit}-{version}-{os}-{arch}.tar.gz`)
+  Compiled C++ witness generator binaries for each circuit (PoL, PoQ, ZKSign, PoC)
+
+#### Platform-Independent Proving Keys
+
+- **Proving keys** (`{circuit}-{version}.zkey.tar.gz`)
+  Groth16 proving keys (.zkey files) for each circuit, required for generating proofs
+
+These proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_21.ptau`), which supports circuits with up to 2^21 (~2M) constraints. The keys are platform-independent and can be used with any compatible prover implementation.
+
 ### Example
 
 ```bash
