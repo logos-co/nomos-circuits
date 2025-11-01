@@ -317,6 +317,12 @@ jobs:
           mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
           mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
 
+          # Restore execute permissions on witness generators
+          chmod +x "${BUNDLE_NAME}/pol/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poq/witness_generator"
+          chmod +x "${BUNDLE_NAME}/zksign/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poc/witness_generator"
+
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
           cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
@@ -746,6 +752,12 @@ jobs:
           mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
           mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
           mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
+
+          # Restore execute permissions on witness generators
+          chmod +x "${BUNDLE_NAME}/pol/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poq/witness_generator"
+          chmod +x "${BUNDLE_NAME}/zksign/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poc/witness_generator"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
