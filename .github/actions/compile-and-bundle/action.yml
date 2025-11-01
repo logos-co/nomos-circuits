@@ -47,10 +47,12 @@ runs:
         CIRCUIT_CPP_DIRNAME="${CIRCUIT_FILESTEM}_cpp"
         
         platform_binary_name="${CIRCUIT_NAME_BINARY}"
+        compiled_binary_name="${CIRCUIT_FILESTEM}"
         if [ "${OS}" = "windows" ]; then
           platform_binary_name="${platform_binary_name}.exe"
+          compiled_binary_name="${compiled_binary_name}.exe"
         fi
-        
+
         {
           echo "CIRCUIT_DIRECTORY=${CIRCUIT_DIRECTORY}"
           echo "CIRCUIT_FILENAME=${CIRCUIT_FILENAME}"
@@ -60,6 +62,7 @@ runs:
           echo "WITNESS_GENERATOR_RESOURCES_PATH=${RESOURCES_PATH}/witness-generator"
           echo "BUNDLE_TRIPLET=${BUNDLE_TRIPLET}"
           echo "PLATFORM_BINARY_NAME=${platform_binary_name}"
+          echo "COMPILED_BINARY_NAME=${compiled_binary_name}"
         } >> "${GITHUB_OUTPUT}"
 
     - name: Generate ${{ inputs.circuit-name-display }}
@@ -110,5 +113,5 @@ runs:
       with:
         name: ${{ inputs.circuit-name-binary }}-${{ inputs.version }}-${{ inputs.os }}-${{ inputs.arch }}
         path: |
-          ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}/${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
+          ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}/${{ steps.parse-circuit-path.outputs.COMPILED_BINARY_NAME }}
           ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}/${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}.dat
