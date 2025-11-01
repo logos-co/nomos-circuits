@@ -503,12 +503,29 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Download All Witness Generator Artifacts
+      - name: Download PoL Witness Generator
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
-          pattern: "*-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}"
-          path: witness-generators/
-          merge-multiple: true
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/pol-artifact
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poq-artifact
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/zksign-artifact
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poc-artifact
 
       - name: Download All Proving Key Artifacts
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
@@ -522,13 +539,20 @@ jobs:
           BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
         run: |
           # Create the bundle directory structure
-          mkdir -p "${BUNDLE_NAME}"
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
 
-          # Move witness generators from artifact download location to bundle
-          mv witness-generators/* "${BUNDLE_NAME}/"
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol.exe "${BUNDLE_NAME}/pol/witness_generator.exe"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq.exe "${BUNDLE_NAME}/poq/witness_generator.exe"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature.exe "${BUNDLE_NAME}/zksign/witness_generator.exe"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc.exe "${BUNDLE_NAME}/poc/witness_generator.exe"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
 
           # Copy proving keys and verification keys into each circuit directory
           cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
