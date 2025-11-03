@@ -18,14 +18,14 @@ Each release includes a single unified bundle per platform:
 
 For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
 
-- **`nomos-circuits-{os}-{arch}-{version}.tar.gz`**
+- **`nomos-circuits-{version}-{os}-{arch}.tar.gz`**
 
   A complete bundle containing all components needed to generate and verify proofs for all circuits.
 
 **Bundle Structure:**
 
 ```
-nomos-circuits-{os}-{arch}-{version}/
+nomos-circuits-{version}-{os}-{arch}/
 ├── VERSION
 ├── pol/
 │   ├── witness_generator[.exe]
