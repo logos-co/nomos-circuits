@@ -46,10 +46,8 @@ runs:
         CIRCUIT_FILESTEM="${CIRCUIT_FILENAME%.circom}"
         CIRCUIT_CPP_DIRNAME="${CIRCUIT_FILESTEM}_cpp"
         
-        platform_binary_name="${CIRCUIT_NAME_BINARY}"
         compiled_binary_name="${CIRCUIT_FILESTEM}"
         if [ "${OS}" = "windows" ]; then
-          platform_binary_name="${platform_binary_name}.exe"
           compiled_binary_name="${compiled_binary_name}.exe"
         fi
 
@@ -61,7 +59,6 @@ runs:
           echo "CIRCUIT_CPP_PATH=${CIRCUIT_DIRECTORY}/${CIRCUIT_CPP_DIRNAME}"
           echo "WITNESS_GENERATOR_RESOURCES_PATH=${RESOURCES_PATH}/witness-generator"
           echo "BUNDLE_TRIPLET=${BUNDLE_TRIPLET}"
-          echo "PLATFORM_BINARY_NAME=${platform_binary_name}"
           echo "COMPILED_BINARY_NAME=${compiled_binary_name}"
         } >> "${GITHUB_OUTPUT}"
 
