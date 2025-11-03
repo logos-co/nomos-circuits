@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*.*.*"
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       tag:
@@ -22,29 +25,126 @@ jobs:
         id: define-version
         env:
           # Use the tag name if it is available, otherwise use the input version.
-          # If neither is available, default to the commit hash.
-          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || 'v0.0.0' }}
+          # For PR testing, use a test version based on PR number and commit SHA.
+          TAG: ${{ (github.ref_type == 'tag' && github.ref_name) || inputs.tag || format('v0.0.0-pr{0}-{1}', github.event.pull_request.number || '0', github.sha) }}
         run: |
           if [ -z "$TAG" ]; then
             echo "Could not determine tag."
             exit 1
-          elif [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "TAG must follow the format of 'vX.Y.Z'. Value: '$VERSION'."
-            exit 2
           fi
 
-          # Parse Version: Take only the vX.Y.Z part.
-          VERSION=$(echo $TAG | cut -d'-' -f2)
+          # For pull requests, allow test versions with format v0.0.0-pr*
+          if [[ "$TAG" =~ ^v0\.0\.0-pr ]]; then
+            echo "Using test version for PR: $TAG"
+            VERSION="$TAG"
+          elif [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "TAG must follow the format of 'vX.Y.Z'. Value: '$TAG'."
+            exit 2
+          else
+            # Parse Version: Take only the vX.Y.Z part.
+            VERSION=$(echo $TAG | cut -d'-' -f1)
+          fi
 
           # Export the tag and version.
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+  generate-proving-keys:
+    name: Generate ${{ matrix.circuit.display }} Proving Key
+    runs-on: ubuntu-latest
+    needs:
+      - setup
+    strategy:
+      fail-fast: false
+      matrix:
+        circuit:
+          - name: pol
+            display: PoL
+            file: pol.circom
+            dir: mantle
+          - name: poq
+            display: PoQ
+            file: poq.circom
+            dir: blend
+          - name: zksign
+            display: ZKSign
+            file: signature.circom
+            dir: mantle
+          - name: poc
+            display: PoC
+            file: poc.circom
+            dir: mantle
+    env:
+      VERSION: ${{ needs.setup.outputs.version }}
+      PTAU_URL: "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_17.ptau"
+      PTAU_FILE: "powersOfTau28_hez_final_17.ptau"
+    steps:
+      - name: Install Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48
+        with:
+          toolchain: stable
+          cache: false
+
+      - name: Install Circom
+        run: |
+          git clone https://github.com/iden3/circom.git
+          cd circom
+          RUSTFLAGS="-A dead_code" cargo build --release
+          RUSTFLAGS="-A dead_code" cargo install --path circom
+          circom --version
+
+      - name: Checkout
+        uses: actions/checkout@8edcb1bdb4e267140fa742c62e395cd74f332709
+
+      - name: Initialise Submodules
+        run: git submodule update --init --recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b
+        with:
+          node-version: '20'
+
+      - name: Install snarkjs
+        run: npm install -g snarkjs@latest
+
+      - name: Cache Powers of Tau
+        id: cache-ptau
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PTAU_FILE }}
+          key: ptau-${{ env.PTAU_FILE }}
+
+      - name: Download Powers of Tau
+        if: steps.cache-ptau.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading Powers of Tau file (this may take a while, ~3GB)..."
+          curl -L -o "${{ env.PTAU_FILE }}" "${{ env.PTAU_URL }}"
+          echo "Download complete."
+
+      - name: Generate Proving Key
+        run: |
+          cd ${{ matrix.circuit.dir }}
+          circom --r1cs --O2 ${{ matrix.circuit.file }}
+          snarkjs groth16 setup ${CIRCUIT_NAME}.r1cs ../${{ env.PTAU_FILE }} ${{ matrix.circuit.name }}-0.zkey
+          head -c 32 /dev/urandom | xxd -p -c 256 | snarkjs zkey contribute ${{ matrix.circuit.name }}-0.zkey ${{ matrix.circuit.name }}.zkey --name="RELEASE" -v
+          snarkjs zkey export verificationkey ${{ matrix.circuit.name }}.zkey ${{ matrix.circuit.name }}_verification_key.json
+        env:
+          CIRCUIT_NAME: ${{ matrix.circuit.file == 'signature.circom' && 'signature' || matrix.circuit.name }}
+
+      - name: Upload Proving Key
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: ${{ matrix.circuit.name }}-proving-key
+          path: |
+            ${{ matrix.circuit.dir }}/${{ matrix.circuit.name }}.zkey
+            ${{ matrix.circuit.dir }}/${{ matrix.circuit.name }}_verification_key.json
 
   build-linux:
     name: Build Linux Binaries (Native)
     runs-on: ubuntu-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       OS: linux
@@ -127,8 +227,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -137,8 +237,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -147,8 +247,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -157,8 +257,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
@@ -167,11 +267,87 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
+      - name: Download PoL Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/pol-artifact
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poq-artifact
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/zksign-artifact
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poc-artifact
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq "${BUNDLE_NAME}/poq/witness_generator"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature "${BUNDLE_NAME}/zksign/witness_generator"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
+
+          # Restore execute permissions on witness generators
+          chmod +x "${BUNDLE_NAME}/pol/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poq/witness_generator"
+          chmod +x "${BUNDLE_NAME}/zksign/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poc/witness_generator"
+
+          # Copy proving keys and verification keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+
   build-windows:
     name: Build Windows Binaries (Native)
     runs-on: windows-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       OS: windows
@@ -293,8 +469,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -303,8 +479,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -313,8 +489,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -323,8 +499,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
@@ -333,11 +509,82 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
+      - name: Download PoL Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/pol-artifact
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poq-artifact
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/zksign-artifact
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poc-artifact
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        shell: msys2 {0}
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol.exe "${BUNDLE_NAME}/pol/witness_generator.exe"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq.exe "${BUNDLE_NAME}/poq/witness_generator.exe"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature.exe "${BUNDLE_NAME}/zksign/witness_generator.exe"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc.exe "${BUNDLE_NAME}/poc/witness_generator.exe"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
+
+          # Copy proving keys and verification keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+
   build-macos:
     name: Build MacOS Binaries (Native)
     runs-on: macos-latest
     needs:
       - setup
+      - generate-proving-keys
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       ARCH: aarch64
@@ -416,8 +663,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -426,8 +673,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -436,8 +683,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -446,8 +693,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
@@ -456,11 +703,89 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
+      - name: Download PoL Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: pol-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/pol-artifact
+
+      - name: Download PoQ Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poq-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poq-artifact
+
+      - name: Download ZKSign Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: zksign-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/zksign-artifact
+
+      - name: Download PoC Witness Generator
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: poc-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+          path: witness-generators/poc-artifact
+
+      - name: Download All Proving Key Artifacts
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          pattern: "*-proving-key"
+          path: proving-keys/
+
+      - name: Create Unified Release Bundle
+        env:
+          BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
+        run: |
+          # Create the bundle directory structure
+          mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
+
+          # Create VERSION file
+          echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Move witness generators into their respective circuit directories
+          mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
+          mv witness-generators/pol-artifact/pol.dat "${BUNDLE_NAME}/pol/witness_generator.dat"
+          mv witness-generators/poq-artifact/poq "${BUNDLE_NAME}/poq/witness_generator"
+          mv witness-generators/poq-artifact/poq.dat "${BUNDLE_NAME}/poq/witness_generator.dat"
+          mv witness-generators/zksign-artifact/signature "${BUNDLE_NAME}/zksign/witness_generator"
+          mv witness-generators/zksign-artifact/signature.dat "${BUNDLE_NAME}/zksign/witness_generator.dat"
+          mv witness-generators/poc-artifact/poc "${BUNDLE_NAME}/poc/witness_generator"
+          mv witness-generators/poc-artifact/poc.dat "${BUNDLE_NAME}/poc/witness_generator.dat"
+
+          # Restore execute permissions on witness generators
+          chmod +x "${BUNDLE_NAME}/pol/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poq/witness_generator"
+          chmod +x "${BUNDLE_NAME}/zksign/witness_generator"
+          chmod +x "${BUNDLE_NAME}/poc/witness_generator"
+
+          # Copy proving keys and verification keys into each circuit directory
+          cp proving-keys/pol-proving-key/pol.zkey "${BUNDLE_NAME}/pol/proving_key.zkey"
+          cp proving-keys/pol-proving-key/pol_verification_key.json "${BUNDLE_NAME}/pol/verification_key.json"
+          cp proving-keys/poq-proving-key/poq.zkey "${BUNDLE_NAME}/poq/proving_key.zkey"
+          cp proving-keys/poq-proving-key/poq_verification_key.json "${BUNDLE_NAME}/poq/verification_key.json"
+          cp proving-keys/zksign-proving-key/zksign.zkey "${BUNDLE_NAME}/zksign/proving_key.zkey"
+          cp proving-keys/zksign-proving-key/zksign_verification_key.json "${BUNDLE_NAME}/zksign/verification_key.json"
+          cp proving-keys/poc-proving-key/poc.zkey "${BUNDLE_NAME}/poc/proving_key.zkey"
+          cp proving-keys/poc-proving-key/poc_verification_key.json "${BUNDLE_NAME}/poc/verification_key.json"
+
+          # Create tarball
+          tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
+
+      - name: Upload Unified Release Bundle
+        uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
+        with:
+          name: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+
   publish-release:
     name: Create Release
     runs-on: ubuntu-latest
+    # Only create releases for tags, not for PRs
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     needs:
       - setup
+      - generate-proving-keys
       - build-linux
       - build-windows
       - build-macos
@@ -495,8 +820,10 @@ jobs:
           prerelease: true
 
   upload-artifacts:
-    name: Upload Artifacts to Release
+    name: Upload Unified Bundles to Release
     runs-on: ubuntu-latest
+    # Only upload to release for tags, not for PRs
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     needs:
       - setup
       - publish-release
@@ -510,23 +837,16 @@ jobs:
             arch: aarch64
           - os: windows
             arch: x86_64
-        artifact:
-          - prover
-          - verifier
-          - pol
-          - poq
-          - zksign
-          - poc
     env:
       UPLOAD_URL: ${{ needs.publish-release.outputs.upload_url }}
-      ARTIFACT_NAME: ${{ matrix.artifact }}-${{ needs.setup.outputs.version }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
+      ARTIFACT_NAME: nomos-circuits-${{ needs.setup.outputs.version }}-${{ matrix.platform.os }}-${{ matrix.platform.arch }}.tar.gz
     steps:
-      - name: Download Artifacts
+      - name: Download Unified Bundle
         uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
         with:
           name: ${{ env.ARTIFACT_NAME }}
 
-      - name: Upload Artifacts to Release
+      - name: Upload Unified Bundle to Release
         uses: actions/upload-release-asset@ef2adfe8cb8ebfa540930c452c576b3819990faa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

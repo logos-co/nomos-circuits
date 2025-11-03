@@ -1,5 +1,5 @@
-name: "Compile and Bundle Circuit"
-description: "Compiles and bundles the witness generator of a Circom Circuit"
+name: "Compile Witness Generator"
+description: "Compiles the witness generator of a Circom Circuit"
 branding:
   icon: "package"
   color: "blue"
@@ -46,11 +46,11 @@ runs:
         CIRCUIT_FILESTEM="${CIRCUIT_FILENAME%.circom}"
         CIRCUIT_CPP_DIRNAME="${CIRCUIT_FILESTEM}_cpp"
         
-        platform_binary_name="${CIRCUIT_NAME_BINARY}"
+        compiled_binary_name="${CIRCUIT_FILESTEM}"
         if [ "${OS}" = "windows" ]; then
-          platform_binary_name="${platform_binary_name}.exe"
+          compiled_binary_name="${compiled_binary_name}.exe"
         fi
-        
+
         {
           echo "CIRCUIT_DIRECTORY=${CIRCUIT_DIRECTORY}"
           echo "CIRCUIT_FILENAME=${CIRCUIT_FILENAME}"
@@ -59,7 +59,7 @@ runs:
           echo "CIRCUIT_CPP_PATH=${CIRCUIT_DIRECTORY}/${CIRCUIT_CPP_DIRNAME}"
           echo "WITNESS_GENERATOR_RESOURCES_PATH=${RESOURCES_PATH}/witness-generator"
           echo "BUNDLE_TRIPLET=${BUNDLE_TRIPLET}"
-          echo "PLATFORM_BINARY_NAME=${platform_binary_name}"
+          echo "COMPILED_BINARY_NAME=${compiled_binary_name}"
         } >> "${GITHUB_OUTPUT}"
 
     - name: Generate ${{ inputs.circuit-name-display }}
@@ -105,24 +105,10 @@ runs:
         OS: ${{ inputs.os }}
       run: make PROJECT="${CIRCUIT_FILESTEM}" "${OS}"
 
-    - name: Bundle ${{ inputs.circuit-name-display }}
-      shell: bash
-      env:
-        CIRCUIT_NAME: ${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}
-        PLATFORM_BINARY_NAME: ${{ steps.parse-circuit-path.outputs.PLATFORM_BINARY_NAME }}
-        BUNDLE_NAME: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}
-        WITNESS_GENERATOR_DIR: ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}
-      run: |
-        BUNDLE_DIR="${BUNDLE_NAME}/witness-generator"
-        mkdir -p "$BUNDLE_DIR"
-
-        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}"
-        mv "${WITNESS_GENERATOR_DIR}/${CIRCUIT_NAME}.dat" "$BUNDLE_DIR/${PLATFORM_BINARY_NAME}.dat"
-
-        tar -czf "${BUNDLE_NAME}.tar.gz" "${BUNDLE_NAME}"
-
     - name: Upload ${{ inputs.circuit-name-display }}
       uses: actions/upload-artifact@de65e23aa2b7e23d713bb51fbfcb6d502f8667d8
       with:
-        name: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
-        path: ${{ inputs.circuit-name-binary }}-${{ steps.parse-circuit-path.outputs.BUNDLE_TRIPLET }}.tar.gz
+        name: ${{ inputs.circuit-name-binary }}-${{ inputs.version }}-${{ inputs.os }}-${{ inputs.arch }}
+        path: |
+          ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}/${{ steps.parse-circuit-path.outputs.COMPILED_BINARY_NAME }}
+          ${{ steps.parse-circuit-path.outputs.CIRCUIT_CPP_PATH }}/${{ steps.parse-circuit-path.outputs.CIRCUIT_FILESTEM }}.dat

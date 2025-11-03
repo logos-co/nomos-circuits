@@ -10,6 +10,53 @@ To trigger a release build:
 
 > Currently, releases published this way are marked as **Draft** and **Pre-Release** to ensure that the changelog and pre-release steps are manually reviewed first.
 
+### Generated Artifacts
+
+Each release includes a single unified bundle per platform:
+
+#### Unified Release Bundles
+
+For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
+
+- **`nomos-circuits-{version}-{os}-{arch}.tar.gz`**
+
+  A complete bundle containing all components needed to generate and verify proofs for all circuits.
+
+**Bundle Structure:**
+
+```
+nomos-circuits-{version}-{os}-{arch}/
+├── VERSION
+├── pol/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+├── poq/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+├── zksign/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+└── poc/
+    ├── witness_generator[.exe]
+    ├── witness_generator.dat
+    ├── proving_key.zkey
+    └── verification_key.json
+```
+
+Each circuit directory contains:
+- **witness_generator**: Compiled C++ binary for generating witnesses from inputs
+- **witness_generator.dat**: Required data file for the witness generator
+- **proving_key.zkey**: Groth16 proving key for generating zk-SNARK proofs
+- **verification_key.json**: Verification key for verifying proofs
+
+The proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_17.ptau`), which supports circuits with up to 2^17 constraints.
+
 ### Example
 
 ```bash
