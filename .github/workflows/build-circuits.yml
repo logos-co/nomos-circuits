@@ -227,8 +227,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -237,8 +237,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -247,8 +247,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -257,8 +257,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
@@ -469,8 +469,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -479,8 +479,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -489,8 +489,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -499,8 +499,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"
@@ -663,8 +663,8 @@ jobs:
           name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
           path: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
 
-      - name: Compile and Bundle PoL
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoL Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoL"
           circuit-name-binary: "pol"
@@ -673,8 +673,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoQ
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoQ Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoQ"
           circuit-name-binary: "poq"
@@ -683,8 +683,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle ZKSign
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile ZKSign Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "ZKSign"
           circuit-name-binary: "zksign"
@@ -693,8 +693,8 @@ jobs:
           os: ${{ env.OS }}
           arch: ${{ env.ARCH }}
 
-      - name: Compile and Bundle PoC
-        uses: ./.github/actions/compile-and-bundle
+      - name: Compile PoC Witness Generator
+        uses: ./.github/actions/compile-witness-generator
         with:
           circuit-name-display: "PoC"
           circuit-name-binary: "poc"

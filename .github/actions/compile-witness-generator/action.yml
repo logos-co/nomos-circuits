@@ -1,5 +1,5 @@
-name: "Compile and Bundle Circuit"
-description: "Compiles and bundles the witness generator of a Circom Circuit"
+name: "Compile Witness Generator"
+description: "Compiles the witness generator of a Circom Circuit"
 branding:
   icon: "package"
   color: "blue"
