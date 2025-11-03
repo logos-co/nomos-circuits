@@ -32,7 +32,7 @@ For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
 - **Proving keys** (`{circuit}-{version}.zkey.tar.gz`)
   Groth16 proving keys (.zkey files) for each circuit, required for generating proofs
 
-These proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_21.ptau`), which supports circuits with up to 2^21 (~2M) constraints. The keys are platform-independent and can be used with any compatible prover implementation.
+These proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_17.ptau`), which supports circuits with up to 2^17 constraints. The keys are platform-independent and can be used with any compatible prover implementation.
 
 ### Example
 

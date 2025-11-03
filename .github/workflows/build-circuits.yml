@@ -76,8 +76,8 @@ jobs:
             dir: mantle
     env:
       VERSION: ${{ needs.setup.outputs.version }}
-      PTAU_URL: "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_21.ptau"
-      PTAU_FILE: "powersOfTau28_hez_final_21.ptau"
+      PTAU_URL: "https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_17.ptau"
+      PTAU_FILE: "powersOfTau28_hez_final_17.ptau"
     steps:
       - name: Install Rust Toolchain
         uses: actions-rust-lang/setup-rust-toolchain@fb51252c7ba57d633bc668f941da052e410add48
