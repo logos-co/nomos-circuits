@@ -12,27 +12,50 @@ To trigger a release build:
 
 ### Generated Artifacts
 
-Each release includes the following artifacts:
+Each release includes a single unified bundle per platform:
 
-#### Platform-Specific Binaries
+#### Unified Release Bundles
 
 For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
 
-- **Prover binaries** (`prover-{version}-{os}-{arch}.tar.gz`)
-  Rapidsnark prover binaries for generating zk-SNARK proofs
+- **`nomos-circuits-{os}-{arch}-{version}.tar.gz`**
 
-- **Verifier binaries** (`verifier-{version}-{os}-{arch}.tar.gz`)
-  Rapidsnark verifier binaries for verifying zk-SNARK proofs
+  A complete bundle containing all components needed to generate and verify proofs for all circuits.
 
-- **Witness generators** (`{circuit}-{version}-{os}-{arch}.tar.gz`)
-  Compiled C++ witness generator binaries for each circuit (PoL, PoQ, ZKSign, PoC)
+**Bundle Structure:**
 
-#### Platform-Independent Proving Keys
+```
+nomos-circuits-{os}-{arch}-{version}/
+├── VERSION
+├── pol/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+├── poq/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+├── zksign/
+│   ├── witness_generator[.exe]
+│   ├── witness_generator.dat
+│   ├── proving_key.zkey
+│   └── verification_key.json
+└── poc/
+    ├── witness_generator[.exe]
+    ├── witness_generator.dat
+    ├── proving_key.zkey
+    └── verification_key.json
+```
 
-- **Proving keys** (`{circuit}-{version}.zkey.tar.gz`)
-  Groth16 proving keys (.zkey files) for each circuit, required for generating proofs
+Each circuit directory contains:
+- **witness_generator**: Compiled C++ binary for generating witnesses from inputs
+- **witness_generator.dat**: Required data file for the witness generator
+- **proving_key.zkey**: Groth16 proving key for generating zk-SNARK proofs
+- **verification_key.json**: Verification key for verifying proofs
 
-These proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_17.ptau`), which supports circuits with up to 2^17 constraints. The keys are platform-independent and can be used with any compatible prover implementation.
+The proving keys are generated using the Hermez Powers of Tau ceremony (`powersOfTau28_hez_final_17.ptau`), which supports circuits with up to 2^17 constraints.
 
 ### Example
 
