@@ -183,6 +183,13 @@ jobs:
       - name: Replace Prover Makefile # TODO: Make a fork generate the appropriate Linux Makefile
         run: cp .github/resources/prover/Makefile rapidsnark/Makefile
 
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
+
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
         run: |
@@ -422,6 +429,13 @@ jobs:
         shell: msys2 {0}
         run: cp .github/resources/prover/${{ env.OS }}.build_gmp.sh rapidsnark/build_gmp.sh
 
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
+
       - name: Compile Prover and Verifier
         shell: msys2 {0}
         working-directory: rapidsnark
@@ -618,6 +632,13 @@ jobs:
 
       - name: Install Dependencies [Prover]
         run: brew install nasm m4
+
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
 
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
