@@ -27,6 +27,8 @@ For each supported platform (Linux x86_64, macOS aarch64, Windows x86_64):
 ```
 nomos-circuits-{version}-{os}-{arch}/
 ├── VERSION
+├── prover[.exe]
+├── verifier[.exe]
 ├── pol/
 │   ├── witness_generator[.exe]
 │   ├── witness_generator.dat
@@ -48,6 +50,10 @@ nomos-circuits-{version}-{os}-{arch}/
     ├── proving_key.zkey
     └── verification_key.json
 ```
+
+At the root level:
+- **prover**: Rapidsnark prover binary for generating zk-SNARK proofs
+- **verifier**: Rapidsnark verifier binary for verifying proofs
 
 Each circuit directory contains:
 - **witness_generator**: Compiled C++ binary for generating witnesses from inputs
