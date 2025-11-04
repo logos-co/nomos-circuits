@@ -542,7 +542,7 @@ jobs:
       - name: Create Unified Release Bundle
         shell: msys2 {0}
         env:
-          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+          BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
         run: |
           # Create the bundle directory structure
           mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
