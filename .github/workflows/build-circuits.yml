@@ -312,6 +312,18 @@ jobs:
           pattern: "*-proving-key"
           path: proving-keys/
 
+      - name: Download Prover Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: prover-artifact/
+
+      - name: Download Verifier Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: verifier-artifact/
+
       - name: Create Unified Release Bundle
         env:
           BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
@@ -321,6 +333,14 @@ jobs:
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Extract and add prover and verifier binaries
+          tar -xzf prover-artifact/prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          tar -xzf verifier-artifact/verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          mv prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/prover/prover "${BUNDLE_NAME}/prover"
+          mv verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/verifier/verifier "${BUNDLE_NAME}/verifier"
+          chmod +x "${BUNDLE_NAME}/prover"
+          chmod +x "${BUNDLE_NAME}/verifier"
 
           # Move witness generators into their respective circuit directories
           mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
@@ -570,6 +590,18 @@ jobs:
           pattern: "*-proving-key"
           path: proving-keys/
 
+      - name: Download Prover Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: prover-artifact/
+
+      - name: Download Verifier Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: verifier-artifact/
+
       - name: Create Unified Release Bundle
         shell: msys2 {0}
         env:
@@ -580,6 +612,12 @@ jobs:
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Extract and add prover and verifier binaries
+          tar -xzf prover-artifact/prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          tar -xzf verifier-artifact/verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          mv prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/prover/prover.exe "${BUNDLE_NAME}/prover.exe"
+          mv verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/verifier/verifier.exe "${BUNDLE_NAME}/verifier.exe"
 
           # Move witness generators into their respective circuit directories
           mv witness-generators/pol-artifact/pol.exe "${BUNDLE_NAME}/pol/witness_generator.exe"
@@ -779,6 +817,18 @@ jobs:
           pattern: "*-proving-key"
           path: proving-keys/
 
+      - name: Download Prover Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: prover-artifact/
+
+      - name: Download Verifier Artifact
+        uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b
+        with:
+          name: verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz
+          path: verifier-artifact/
+
       - name: Create Unified Release Bundle
         env:
           BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
@@ -788,6 +838,14 @@ jobs:
 
           # Create VERSION file
           echo "${{ env.VERSION }}" > "${BUNDLE_NAME}/VERSION"
+
+          # Extract and add prover and verifier binaries
+          tar -xzf prover-artifact/prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          tar -xzf verifier-artifact/verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}.tar.gz -C .
+          mv prover-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/prover/prover "${BUNDLE_NAME}/prover"
+          mv verifier-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}/verifier/verifier "${BUNDLE_NAME}/verifier"
+          chmod +x "${BUNDLE_NAME}/prover"
+          chmod +x "${BUNDLE_NAME}/verifier"
 
           # Move witness generators into their respective circuit directories
           mv witness-generators/pol-artifact/pol "${BUNDLE_NAME}/pol/witness_generator"
