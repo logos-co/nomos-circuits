@@ -190,6 +190,14 @@ jobs:
           path: rapidsnark/depends/gmp-6.2.1.tar.xz
           key: gmp-6.2.1
 
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
+
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
         run: |
@@ -436,6 +444,15 @@ jobs:
           path: rapidsnark/depends/gmp-6.2.1.tar.xz
           key: gmp-6.2.1
 
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
+
       - name: Compile Prover and Verifier
         shell: msys2 {0}
         working-directory: rapidsnark
@@ -639,6 +656,14 @@ jobs:
         with:
           path: rapidsnark/depends/gmp-6.2.1.tar.xz
           key: gmp-6.2.1
+
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
 
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
