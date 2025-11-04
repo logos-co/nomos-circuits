@@ -183,6 +183,21 @@ jobs:
       - name: Replace Prover Makefile # TODO: Make a fork generate the appropriate Linux Makefile
         run: cp .github/resources/prover/Makefile rapidsnark/Makefile
 
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
+
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
+
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
         run: |
@@ -422,6 +437,22 @@ jobs:
         shell: msys2 {0}
         run: cp .github/resources/prover/${{ env.OS }}.build_gmp.sh rapidsnark/build_gmp.sh
 
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
+
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        shell: msys2 {0}
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
+
       - name: Compile Prover and Verifier
         shell: msys2 {0}
         working-directory: rapidsnark
@@ -542,7 +573,7 @@ jobs:
       - name: Create Unified Release Bundle
         shell: msys2 {0}
         env:
-          BUNDLE_NAME: nomos-circuits-${{ env.OS }}-${{ env.ARCH }}-${{ env.VERSION }}
+          BUNDLE_NAME: nomos-circuits-${{ env.VERSION }}-${{ env.OS }}-${{ env.ARCH }}
         run: |
           # Create the bundle directory structure
           mkdir -p "${BUNDLE_NAME}"/{pol,poq,zksign,poc}
@@ -618,6 +649,21 @@ jobs:
 
       - name: Install Dependencies [Prover]
         run: brew install nasm m4
+
+      - name: Cache GMP Archive
+        id: cache-gmp
+        uses: actions/cache@v4
+        with:
+          path: rapidsnark/depends/gmp-6.2.1.tar.xz
+          key: gmp-6.2.1
+
+      - name: Download GMP Archive
+        if: steps.cache-gmp.outputs.cache-hit != 'true'
+        working-directory: rapidsnark/depends
+        run: |
+          echo "Downloading GMP archive..."
+          curl -L -o gmp-6.2.1.tar.xz https://ftpmirror.gnu.org/gmp/gmp-6.2.1.tar.xz
+          echo "Download complete."
 
       - name: Compile Prover and Verifier
         working-directory: rapidsnark
