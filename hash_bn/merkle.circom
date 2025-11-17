@@ -1,7 +1,7 @@
 //test
 pragma circom 2.1.9;
 
-include "../hash_bn/poseidon2_hash.circom";
+include "../hash_bn/poseidon2_perm.circom";
 include "../circomlib/circuits/comparators.circom";
 
 // compute a merkle root of depth n
@@ -15,12 +15,12 @@ template compute_merkle_root(n) {
 
     component compression_hash[n];
 
-    compression_hash[0] = Poseidon2_hash(2);
+    compression_hash[0] = Compression();
     compression_hash[0].inp[0] <== leaf - selector[n-1] * (leaf - nodes[0]);
     compression_hash[0].inp[1] <== nodes[0] - selector[n-1] * (nodes[0] - leaf);
 
     for(var i=1; i<n; i++){
-        compression_hash[i] = Poseidon2_hash(2);
+        compression_hash[i] = Compression();
         compression_hash[i].inp[0] <== compression_hash[i-1].out - selector[n-1-i] * (compression_hash[i-1].out - nodes[i]);
         compression_hash[i].inp[1] <== nodes[i] - selector[n-1-i] * (nodes[i] - compression_hash[i-1].out);
     }

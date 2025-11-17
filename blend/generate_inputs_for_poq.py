@@ -155,7 +155,7 @@ def Permutation(inp):
     return state
 
 def Compression(inp):
-    return Permutation([inp[0],inp[1],F(0)])
+    return Permutation([inp[0],inp[1],F(0)])[0]
 
 def PoseidonSponge(data, capacity, output_len):
     rate = 3 - capacity;
@@ -228,9 +228,9 @@ core_nodes = [F(randrange(0,p,1)) for i in range(20)]
 core_root = pk_core
 for i in range(20):
     if int(core_selectors[19-i]) == 0:
-        core_root = poseidon2_hash([core_root,core_nodes[i]])
+        core_root = Compression([core_root,core_nodes[i]])
     else:
-        core_root = poseidon2_hash([core_nodes[i],core_root])
+        core_root = Compression([core_nodes[i],core_root])
 
 #pk_root, core_path, core_selectors = merkle_root_and_path(pk_core, 20)
 
@@ -260,9 +260,9 @@ slot_secret_path = [F(randrange(0,p,1)) for i in range(25)]
 secret_root = slot_secret
 for i in range(25):
     if int(slot_secret_indexes[24-i]) == 0:
-        secret_root = poseidon2_hash([secret_root,slot_secret_path[i]])
+        secret_root = Compression([secret_root,slot_secret_path[i]])
     else:
-        secret_root = poseidon2_hash([slot_secret_path[i],secret_root])
+        secret_root = Compression([slot_secret_path[i],secret_root])
 sk = poseidon2_hash([F(256174383281726064679014503048630094),starting_slot,secret_root])
 pk = poseidon2_hash([F(1296193216988918402894),sk])
 
@@ -279,9 +279,9 @@ aged_selectors = format(aged_selectors,'032b')
 aged_root = note_id
 for i in range(32):
     if int(aged_selectors[31-i]) == 0:
-        aged_root = poseidon2_hash([aged_root,aged_nodes[i]])
+        aged_root = Compression([aged_root,aged_nodes[i]])
     else:
-        aged_root = poseidon2_hash([aged_nodes[i],aged_root])
+        aged_root = Compression([aged_nodes[i],aged_root])
 
 # 3) Choose branch & index
 index    = randrange(0, Ql if core_or_leader else Qc,1)
