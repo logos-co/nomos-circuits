@@ -245,7 +245,7 @@ for i in range(25):
     else:
         secret_root = Compression([slot_secret_path[i],secret_root])
 sk = poseidon2_hash([F(256174383281726064679014503048630094),starting_slot,secret_root])
-pk = poseidon2_hash([F(1296193216988918402894),sk])
+pk = Compression([F(1296193216988918402894),sk])
 
 note_id = poseidon2_hash([F(65580641562429851895355409762135920462),tx_hash,output_number,value,pk])
 ticket = poseidon2_hash([F(13887241025832268),F(epoch_nonce),F(slot_number),note_id,sk])

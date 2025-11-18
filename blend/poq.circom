@@ -125,7 +125,7 @@ template ProofOfQuota(nLevelsPK, nLevelsPol, bitsQuota) {
 
 
     // Derive key_nullifier
-    component nf = Poseidon2_hash(2);
+    component nf = Compression();
     component dstNF = KEY_NULLIFIER_V1();
     nf.inp[0] <== dstNF.out;
     nf.inp[1] <== selection_randomness.out;

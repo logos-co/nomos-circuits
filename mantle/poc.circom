@@ -9,7 +9,7 @@ template derive_voucher_nullifier(){
     signal input secret_voucher;
     signal output out;
 
-    component hash = Poseidon2_hash(2);
+    component hash = Compression();
     component dst = VOUCHER_NF();
     hash.inp[0] <== dst.out;
     hash.inp[1] <== secret_voucher;
@@ -21,7 +21,7 @@ template derive_reward_voucher(){
     signal input secret_voucher;
     signal output out;
 
-    component hash = Poseidon2_hash(2);
+    component hash = Compression(   );
     component dst = REWARD_VOUCHER();
     hash.inp[0] <== dst.out;
     hash.inp[1] <== secret_voucher;
